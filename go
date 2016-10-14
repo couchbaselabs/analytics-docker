@@ -16,5 +16,5 @@ then
   )
 fi
 
-docker build --tag couchbaselabs/analytics-demo .
+docker build --tag couchbasesamples/analytics-demo .
 
