@@ -11,7 +11,7 @@ Then visit [http://localhost:8095/](http://localhost:8095/) for the Analytics Wo
 
 You can run the command-line query tool cbq with:
 
-    docker exec -it analytics cbq -e http://localhost:8095/
+    docker exec -it analytics cbq
 
 # Building your own
 
