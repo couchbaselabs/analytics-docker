@@ -10,3 +10,5 @@ Couchbase with NoSQL Analytics Service
 
     docker run -d -p 8095:8095 -v `pwd`/analytics_demo:/opt/couchbase/var couchbasesamples/analytics-demo
 
+Then visit http://localhost:8095/ for the Analytics Workbench.
+
