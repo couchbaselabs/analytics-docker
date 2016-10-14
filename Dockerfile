@@ -17,6 +17,7 @@ ENV JAVA_HOME=/usr/local/java
 # Analytics.
 COPY build /opt/couchbase
 RUN chown -R couchbase:couchbase /opt/couchbase/cbas
+ENV PATH=/opt/couchbase/cbas/bin:$PATH
 
 COPY analytics-entrypoint.sh /
 ENTRYPOINT ["/analytics-entrypoint.sh"]
