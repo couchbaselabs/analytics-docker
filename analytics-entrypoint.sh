@@ -51,7 +51,7 @@ then
 fi
 
 # Start up the sample Analytics cluster
-su couchbase /opt/couchbase/cbas/samples/local/bin/start-sample-cluster.sh
+su couchbase /opt/couchbase/cbas/opt/local/bin/start-sample-cluster.sh
 
 # Let everything run
 wait
