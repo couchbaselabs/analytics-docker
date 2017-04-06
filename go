@@ -1,4 +1,10 @@
-#!/bin/bash -e
+#!/bin/bash -ex
+
+if [ ! -e couchbase-analytics-*.zip ]
+then
+    echo "No local build - aborting!"
+    exit 5
+fi
 
 mkdir -p build
 if [ couchbase-analytics-*.zip -nt build/cbas ]
@@ -13,4 +19,6 @@ then
   )
 fi
 
-docker build --tag couchbasesamples/analytics-demo .
+IMAGE=${1-couchbase/analytics-demo}
+
+docker build --tag ${IMAGE} .
