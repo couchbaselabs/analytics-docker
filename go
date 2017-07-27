@@ -1,24 +1,17 @@
 #!/bin/bash -ex
 
-if [ ! -e couchbase-analytics-*.zip ]
+VERSION=$1
+BLD_NUM=$2
+IMAGE=$3
+if [ -z "$BLD_NUM" ]
 then
-    echo "No local build - aborting!"
-    exit 5
+  echo 'Usage: ./go VERSION BLD_NUM [IMAGE]'
+  exit 1
+fi
+if [ -z "$IMAGE" ]
+then
+  IMAGE=couchbasesamples/analytics-demo:${VERSION}-${BLD_NUM}
+  echo "Using image name ${IMAGE}"
 fi
 
-mkdir -p build
-if [ couchbase-analytics-*.zip -nt build/cbas ]
-then
-  (
-    cd build
-    unzip ../couchbase-analytics-*.zip
-    sed -i -e 's/=data/=\/opt\/couchbase\/var\/analytics\/data/g' \
-      cbas/opt/local/conf/*.conf
-    sed -i -e 's/^LOGSDIR=.*$/LOGSDIR=\/opt\/couchbase\/var\/analytics\/logs/' \
-      cbas/opt/local/bin/start-sample-cluster.sh
-  )
-fi
-
-IMAGE=${1-couchbase/analytics-demo}
-
-docker build --tag ${IMAGE} .
+docker build --build-arg CB_VERSION=${VERSION} --build-arg CB_BLD_NUM=${BLD_NUM} --tag ${IMAGE} .

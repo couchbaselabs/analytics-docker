@@ -1,26 +1,68 @@
-FROM couchbase:enterprise-4.6.1
+FROM ubuntu:14.04
 
-MAINTAINER ceej@couchbase.com
+MAINTAINER Chris Hillery <ceej@couchbase.com>
 
-# Oracle JDK.
-RUN mkdir /tmp/deploy && \
-    cd /tmp/deploy && \
-    curl -L --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" \
-        http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jre-8u131-linux-x64.tar.gz -o jre.tgz && \
-    cd /usr/local && \
-    tar xvzf /tmp/deploy/jre.tgz && \
-    ln -s jre* java && \
-    for file in /usr/local/java/bin/*; do ln -s $file /usr/local/bin; done && \
-    rm -rf /tmp/deploy
-ENV JAVA_HOME=/usr/local/java
+# Install dependencies:
+#  runit: for container process management
+#  wget: for downloading .deb
+#  python-httplib2: used by CLI tools
+#  chrpath: for fixing curl, below
+# Additional dependencies for system commands used by cbcollect_info:
+#  lsof: lsof
+#  lshw: lshw
+#  sysstat: iostat, sar, mpstat
+#  net-tools: ifconfig, arp, netstat
+#  numactl: numactl
+RUN apt-get update && \
+    apt-get install -yq runit wget python-httplib2 chrpath \
+    lsof lshw sysstat net-tools numactl  && \
+    apt-get autoremove && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Analytics.
-COPY build /opt/couchbase
-RUN chown -R couchbase:couchbase /opt/couchbase/cbas
-COPY cbq-wrapper.sh /usr/local/bin/cbq
+ARG CB_VERSION=5.0.0
+ARG CB_BLD_NUM=606
+ARG CB_RELEASE_URL=http://latestbuilds.service.couchbase.com/builds/latestbuilds/server-analytics/$CB_VERSION/$CB_BLD_NUM
+ARG CB_PACKAGE=couchbase-server-analytics_$CB_VERSION-$CB_BLD_NUM-ubuntu14.04_amd64.deb
 
-COPY analytics-entrypoint.sh /
-ENTRYPOINT ["/analytics-entrypoint.sh"]
-CMD ["analytics-demo"]
+ENV PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
+# Create Couchbase user with UID 1000 (necessary to match default
+# boot2docker UID)
+RUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M
 
+# Install couchbase
+RUN wget -N $CB_RELEASE_URL/$CB_PACKAGE && \
+    dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE
+
+# Add runit script for couchbase-server and node configuration
+COPY scripts/run /etc/service/couchbase-server/run
+COPY scripts/configure-node.sh /etc/service/config-couchbase/run
+
+# Add dummy script for commands invoked by cbcollect_info that
+# make no sense in a Docker container
+COPY scripts/dummy.sh /usr/local/bin/
+RUN ln -s dummy.sh /usr/local/bin/iptables-save && \
+    ln -s dummy.sh /usr/local/bin/lvdisplay && \
+    ln -s dummy.sh /usr/local/bin/vgdisplay && \
+    ln -s dummy.sh /usr/local/bin/pvdisplay
+
+# Fix curl RPATH
+RUN chrpath -r '$ORIGIN/../lib' /opt/couchbase/bin/curl
+
+# Add bootstrap script
+COPY scripts/entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["couchbase-server"]
+
+# 8091: Couchbase Web console, REST/HTTP interface
+# 8092: Views, queries, XDCR
+# 8093: Query services (4.0+)
+# 8094: Full-text Search (4.5+)
+# 11207: Smart client library data node access (SSL)
+# 11210: Smart client library/moxi data node access
+# 11211: Legacy non-smart client library data node access
+# 18091: Couchbase Web console, REST/HTTP interface (SSL)
+# 18092: Views, query, XDCR (SSL)
+# 18093: Query services (SSL) (4.0+)
+EXPOSE 8091 8092 8093 8094 11207 11210 11211 18091 18092 18093
+VOLUME /opt/couchbase/var
