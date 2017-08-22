@@ -5,7 +5,7 @@ sleep 15
 export PATH=/opt/couchbase/bin:${PATH}
 
 # Setup index and memory quota
-curl -sS http://127.0.0.1:8091/pools/default -d memoryQuota=300 -d indexMemoryQuota=300 > /dev/null
+curl -sS http://127.0.0.1:8091/pools/default -d memoryQuota=300 -d indexMemoryQuota=500 -d cbasMemoryQuota=1024 > /dev/null
 
 # Setup services
 echo "Configuring Services..."
@@ -17,12 +17,11 @@ curl -sS http://127.0.0.1:8091/settings/web -d port=8091 -d username=Administrat
 # Setup Memory Optimized Indexes
 curl -sS -i -u Administrator:password -X POST http://127.0.0.1:8091/settings/indexes -d 'storageMode=memory_optimized' > /dev/null
 
-# Load travel-sample bucket
-#curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]' 
+# Load beer-sample bucket
+curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["beer-sample"]'
 
-# Create default bucket
-echo "Creating Default bucket..."
-curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/pools/default/buckets -d name=default -d ramQuotaMB=100 -d authType=sasl -d bucketType=couchbase > /dev/null
+# Load travel-sample bucket
+curl -sS -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]'
 
 echo "Configuration completed - Couchbase Admin UI: http://localhost:8091"
 

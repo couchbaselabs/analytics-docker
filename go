@@ -10,7 +10,7 @@ then
 fi
 if [ -z "$IMAGE" ]
 then
-  IMAGE=couchbasesamples/analytics-demo:${VERSION}-${BLD_NUM}
+  IMAGE=couchbase/analytics-demo:${VERSION}-${BLD_NUM}
   echo "Using image name ${IMAGE}"
 fi
 
