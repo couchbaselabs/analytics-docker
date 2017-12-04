@@ -1,13 +1,26 @@
 #!/bin/sh
 
-echo "Configuring Couchbase Server.  Please wait (~60 sec)..."
-
-export PATH=/opt/couchbase/bin:${PATH}
-
 # Log all subsequent commands to logfile. FD 3 is now the console
 # for things we want to show up in "docker logs".
 LOGFILE=/opt/couchbase/var/lib/couchbase/logs/container-startup.log
 exec 3>&1 1>>${LOGFILE} 2>&1
+
+CONFIG_DONE_FILE=/opt/couchbase/var/lib/couchbase/container-configured
+config_done() {
+  touch ${CONFIG_DONE_FILE}
+  echo "Couchbase Admin UI: http://localhost:8091" | tee /dev/fd/3
+  echo "Stopping config-couchbase service"
+  sv stop /etc/service/config-couchbase
+}
+
+if [ -e ${CONFIG_DONE_FILE} ]; then
+  echo "Container previously configured." | tee /dev/fd/3
+  config_done
+else
+  echo "Configuring Couchbase Server.  Please wait (~60 sec)..." | tee /dev/fd/3
+fi
+
+export PATH=/opt/couchbase/bin:${PATH}
 
 while true; do
   status=$(curl -s -w "%{http_code}" -o /dev/null http://127.0.0.1:8091/ui/index.html)
@@ -62,7 +75,7 @@ echo "Loading travel-sample with curl:"
 curl_check -u Administrator:password -X POST http://127.0.0.1:8091/sampleBuckets/install -d '["travel-sample"]'
 echo
 
-echo "Configuration completed - Couchbase Admin UI: http://localhost:8091" | tee /dev/fd/3
+echo "Configuration completed!" | tee /dev/fd/3
 
 if [ "$TYPE" = "WORKER" ]; then
   sleep 15
@@ -77,5 +90,4 @@ if [ "$TYPE" = "WORKER" ]; then
   fi;
 fi;
 
-echo "Stopping config-couchbase service"
-sv stop /etc/service/config-couchbase
+config_done
