@@ -14,4 +14,4 @@ then
   echo "Using image name ${IMAGE}"
 fi
 
-docker build --build-arg CB_VERSION=${VERSION} --build-arg CB_BLD_NUM=${BLD_NUM} --tag ${IMAGE} .
+docker build --tag ${IMAGE} .
