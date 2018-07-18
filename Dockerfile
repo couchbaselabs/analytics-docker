@@ -1,4 +1,4 @@
-FROM couchbase/server:5.5.0-Mar
+FROM couchbase/server-internal:6.0.0-1331
 
 MAINTAINER Chris Hillery <ceej@couchbase.com>
 
